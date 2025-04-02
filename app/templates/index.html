@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDoS检测系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航栏 -->
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <h1>DDoS检测系统</h1>
+            </div>
+            <div class="navbar-menu">
+                <button class="btn-alert" id="alertBtn">告警中心</button>
+                <span class="system-status" id="systemStatus">系统状态: 正常</span>
+            </div>
+        </nav>
+
+        <!-- 主要内容区 -->
+        <div class="main-content">
+            <!-- 系统资源监控 -->
+            <div class="panel resource-monitor">
+                <h2>系统资源监控</h2>
+                <div class="resource-grid">
+                    <div class="resource-item">
+                        <div class="resource-title">CPU使用率</div>
+                        <div class="resource-value" id="cpuUsage">0%</div>
+                        <div class="resource-chart" id="cpuChart"></div>
+                    </div>
+                    <div class="resource-item">
+                        <div class="resource-title">内存使用率</div>
+                        <div class="resource-value" id="memoryUsage">0%</div>
+                        <div class="resource-chart" id="memoryChart"></div>
+                    </div>
+                    <div class="resource-item">
+                        <div class="resource-title">磁盘使用率</div>
+                        <div class="resource-value" id="diskUsage">0%</div>
+                        <div class="resource-chart" id="diskChart"></div>
+                    </div>
+                    <div class="resource-item">
+                        <div class="resource-title">网络流量</div>
+                        <div class="resource-value" id="networkUsage">0 MB/s</div>
+                        <div class="resource-chart" id="networkChart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 流量监控 -->
+            <div class="panel traffic-monitor">
+                <h2>流量监控</h2>
+                <div class="traffic-grid">
+                    <div class="traffic-chart">
+                        <div class="chart-container" id="trafficChart"></div>
+                    </div>
+                    <div class="traffic-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">总流量</span>
+                            <span class="stat-value" id="totalTraffic">0 GB</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">当前速率</span>
+                            <span class="stat-value" id="currentRate">0 MB/s</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">连接数</span>
+                            <span class="stat-value" id="connectionCount">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DDoS检测 -->
+            <div class="panel detection-panel">
+                <h2>DDoS检测</h2>
+                <div class="detection-grid">
+                    <div class="detection-chart">
+                        <div class="chart-container" id="attackChart"></div>
+                    </div>
+                    <div class="detection-stats">
+                        <div class="stat-card">
+                            <div class="stat-title">攻击检测率</div>
+                            <div class="stat-value" id="detectionRate">0%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">误报率</div>
+                            <div class="stat-value" id="falsePositiveRate">0%</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">当前威胁等级</div>
+                            <div class="stat-value" id="threatLevel">低</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 特征分析 -->
+            <div class="panel feature-analysis">
+                <h2>特征分析</h2>
+                <div class="feature-grid">
+                    <div class="feature-chart">
+                        <div class="chart-container" id="featureChart"></div>
+                    </div>
+                    <div class="feature-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>特征</th>
+                                    <th>值</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="featureTableBody">
+                                <!-- 动态填充 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html> 

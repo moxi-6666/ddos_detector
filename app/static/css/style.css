@@ -1,0 +1,200 @@
+/* 全局样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f0f2f5;
+}
+
+/* 导航栏 */
+.navbar {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 1rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1890ff;
+}
+
+/* 主容器 */
+.container {
+    max-width: 1200px;
+    margin: 80px auto 0;
+    padding: 0 1rem;
+}
+
+/* 面板样式 */
+.panel {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.panel h2 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+/* 图表容器 */
+.chart-container {
+    height: 300px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+/* 统计卡片 */
+.stat-card {
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.stat-title {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+/* 检测网格 */
+.detection-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+/* 域名检测 */
+.domain-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.domain-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.domain-item:last-child {
+    border-bottom: none;
+}
+
+/* 威胁等级标签 */
+.threat-level {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.threat-level.high {
+    background-color: #ff4d4f;
+    color: #fff;
+}
+
+.threat-level.medium {
+    background-color: #faad14;
+    color: #fff;
+}
+
+.threat-level.low {
+    background-color: #52c41a;
+    color: #fff;
+}
+
+/* 状态标签 */
+.status-normal {
+    color: #52c41a;
+}
+
+.status-error {
+    color: #ff4d4f;
+}
+
+/* 检测方法标签 */
+.detection-method {
+    color: #1890ff;
+    font-size: 0.9rem;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+    .detection-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .container {
+        margin-top: 60px;
+    }
+}
+
+/* 加载动画 */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+}
+
+.loading::after {
+    content: "";
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #1890ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 工具提示 */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltip-text {
+    visibility: hidden;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 5px;
+    border-radius: 6px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+} 
