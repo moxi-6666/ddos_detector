@@ -1,68 +1,125 @@
 #!/bin/bash
 
+# 设置错误时退出
+set -e
+
+# 颜色定义
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# 打印带颜色的信息
+print_info() {
+    echo -e "${GREEN}[INFO] $1${NC}"
+}
+
+print_warn() {
+    echo -e "${YELLOW}[WARN] $1${NC}"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR] $1${NC}"
+}
+
+# 检查是否为root用户
+if [ "$EUID" -ne 0 ]; then
+    print_error "请使用root权限运行此脚本"
+    exit 1
+fi
+
 # 更新系统
-echo "正在更新系统..."
-sudo apt update && sudo apt upgrade -y
+print_info "正在更新系统..."
+apt-get update
+apt-get upgrade -y
 
-# 安装系统依赖
-echo "正在安装系统依赖..."
-sudo apt install -y python3-pip python3-dev build-essential libssl-dev libffi-dev git
+# 安装必要的软件包
+print_info "正在安装必要的软件包..."
+apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    software-properties-common \
+    git \
+    build-essential \
+    python3.8 \
+    python3.8-dev \
+    python3.8-venv \
+    python3-pip \
+    libpcap-dev
 
-# 安装MongoDB
-echo "正在安装MongoDB..."
-sudo apt install -y mongodb
-sudo systemctl start mongodb
-sudo systemctl enable mongodb
+# 安装Docker
+print_info "正在安装Docker..."
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io
 
-# 安装Redis
-echo "正在安装Redis..."
-sudo apt install -y redis-server
-sudo systemctl start redis-server
-sudo systemctl enable redis-server
+# 安装Docker Compose
+print_info "正在安装Docker Compose..."
+curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
 
-# 克隆项目
-echo "正在克隆项目..."
-git clone https://github.com/moxi-6666/ddos_detector.git
-cd ddos_detector
+# 创建项目目录
+print_info "正在创建项目目录..."
+mkdir -p /opt/ddos_detector
+cd /opt/ddos_detector
 
-# 创建虚拟环境
-echo "正在创建虚拟环境..."
-python3 -m venv venv
-source venv/bin/activate
+# 创建必要的子目录
+mkdir -p logs data prometheus_data
 
-# 安装Python依赖
-echo "正在安装Python依赖..."
-pip install --upgrade pip
-pip install -r requirements.txt
+# 设置目录权限
+chmod -R 755 /opt/ddos_detector
 
-# 创建必要的目录
-echo "正在创建必要的目录..."
-mkdir -p logs data models
+# 创建环境变量文件
+print_info "正在创建环境变量文件..."
+cat > .env << EOL
+# 应用配置
+APP_ENV=production
+APP_SECRET_KEY=$(openssl rand -hex 32)
+JWT_SECRET_KEY=$(openssl rand -hex 32)
+APP_PORT=5000
+APP_HOST=0.0.0.0
 
-# 设置环境变量
-echo "正在设置环境变量..."
-cp .env.example .env
-# 编辑.env文件，设置必要的配置项
-sed -i 's/MONGODB_URI=mongodb:\/\/localhost:27017\/ddos_detector/MONGODB_URI=mongodb:\/\/localhost:27017\/ddos_detector/' .env
-sed -i 's/REDIS_URI=redis:\/\/localhost:6379\/0/REDIS_URI=redis:\/\/localhost:6379\/0/' .env
+# 数据库配置
+MONGODB_URI=mongodb://mongodb:27017/
+MONGODB_DB=ddos_detector
+MONGODB_USER=admin
+MONGODB_PASSWORD=$(openssl rand -hex 16)
+REDIS_URI=redis://redis:6379/0
+REDIS_PASSWORD=$(openssl rand -hex 16)
 
-# 初始化数据库
-echo "正在初始化数据库..."
-python scripts/init_db.py
+# 日志配置
+LOG_LEVEL=INFO
+LOG_DIR=/app/logs
+DATA_DIR=/app/data
+MODEL_DIR=/app/models
 
-# 设置日志
-echo "正在设置日志..."
-python scripts/setup_logging.py
+# 监控配置
+GRAFANA_ADMIN_PASSWORD=$(openssl rand -hex 16)
 
-# 设置模型
-echo "正在设置模型..."
-python scripts/setup_models.py
+# 时区配置
+TZ=Asia/Shanghai
+EOL
 
-# 设置权限
-echo "正在设置权限..."
-chmod +x scripts/*.sh
+# 设置环境变量文件权限
+chmod 600 .env
 
-echo "部署完成！"
-echo "请运行以下命令启动服务："
-echo "1. 启动Web服务：python app.py"
-echo "2. 启动检测服务：python scripts/start_detector.py" 
+# 启动服务
+print_info "正在启动服务..."
+docker-compose up -d
+
+# 等待服务启动
+print_info "等待服务启动..."
+sleep 30
+
+# 检查服务状态
+print_info "检查服务状态..."
+docker-compose ps
+
+print_info "部署完成！"
+print_info "请访问以下地址："
+print_info "Web界面: http://localhost:5000"
+print_info "Grafana: http://localhost:3000"
+print_info "Prometheus: http://localhost:9090"
+print_info "默认Grafana管理员密码: $(grep GRAFANA_ADMIN_PASSWORD .env | cut -d '=' -f2)" 
