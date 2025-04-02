@@ -5,125 +5,335 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DDoS检测系统</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.2.2/dist/echarts.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <!-- 顶部导航栏 -->
         <nav class="navbar">
-            <div class="navbar-brand">
-                <h1>DDoS检测系统</h1>
-            </div>
-            <div class="navbar-menu">
-                <button class="btn-alert" id="alertBtn">告警中心</button>
-                <span class="system-status" id="systemStatus">系统状态: 正常</span>
+            <div class="logo">DDoS检测系统</div>
+            <div class="nav-items">
+                <span class="status-indicator" id="connection-status">未连接</span>
+                <span class="client-count" id="client-count">客户端数: 0</span>
             </div>
         </nav>
 
-        <!-- 主要内容区 -->
-        <div class="main-content">
-            <!-- 系统资源监控 -->
-            <div class="panel resource-monitor">
-                <h2>系统资源监控</h2>
-                <div class="resource-grid">
-                    <div class="resource-item">
-                        <div class="resource-title">CPU使用率</div>
-                        <div class="resource-value" id="cpuUsage">0%</div>
-                        <div class="resource-chart" id="cpuChart"></div>
+        <div class="dashboard">
+            <!-- 系统状态面板 -->
+            <div class="panel system-status">
+                <h3>系统状态</h3>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <span class="label">CPU使用率</span>
+                        <span class="value" id="cpu-usage">0%</span>
                     </div>
-                    <div class="resource-item">
-                        <div class="resource-title">内存使用率</div>
-                        <div class="resource-value" id="memoryUsage">0%</div>
-                        <div class="resource-chart" id="memoryChart"></div>
+                    <div class="status-item">
+                        <span class="label">内存使用率</span>
+                        <span class="value" id="memory-usage">0%</span>
                     </div>
-                    <div class="resource-item">
-                        <div class="resource-title">磁盘使用率</div>
-                        <div class="resource-value" id="diskUsage">0%</div>
-                        <div class="resource-chart" id="diskChart"></div>
+                    <div class="status-item">
+                        <span class="label">网络流量</span>
+                        <span class="value" id="network-traffic">0 MB/s</span>
                     </div>
-                    <div class="resource-item">
-                        <div class="resource-title">网络流量</div>
-                        <div class="resource-value" id="networkUsage">0 MB/s</div>
-                        <div class="resource-chart" id="networkChart"></div>
+                    <div class="status-item">
+                        <span class="label">连接数</span>
+                        <span class="value" id="connection-count">0</span>
                     </div>
                 </div>
             </div>
 
-            <!-- 流量监控 -->
-            <div class="panel traffic-monitor">
-                <h2>流量监控</h2>
-                <div class="traffic-grid">
-                    <div class="traffic-chart">
-                        <div class="chart-container" id="trafficChart"></div>
+            <!-- 流量统计面板 -->
+            <div class="panel traffic-stats">
+                <h3>流量统计</h3>
+                <div id="traffic-chart" style="height: 300px;"></div>
+            </div>
+
+            <!-- 攻击检测面板 -->
+            <div class="panel attack-detection">
+                <h3>攻击检测</h3>
+                <div id="attack-map" style="height: 300px;"></div>
+                <div class="attack-stats">
+                    <div class="stat-item">
+                        <span class="label">检测到的攻击</span>
+                        <span class="value" id="attack-count">0</span>
                     </div>
-                    <div class="traffic-stats">
-                        <div class="stat-item">
-                            <span class="stat-label">总流量</span>
-                            <span class="stat-value" id="totalTraffic">0 GB</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">当前速率</span>
-                            <span class="stat-value" id="currentRate">0 MB/s</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">连接数</span>
-                            <span class="stat-value" id="connectionCount">0</span>
-                        </div>
+                    <div class="stat-item">
+                        <span class="label">当前活跃攻击</span>
+                        <span class="value" id="active-attacks">0</span>
                     </div>
                 </div>
             </div>
 
-            <!-- DDoS检测 -->
-            <div class="panel detection-panel">
-                <h2>DDoS检测</h2>
-                <div class="detection-grid">
-                    <div class="detection-chart">
-                        <div class="chart-container" id="attackChart"></div>
+            <!-- 域名检测面板 -->
+            <div class="panel domain-detection">
+                <h3>域名检测</h3>
+                <div class="domain-stats">
+                    <div class="stat-item">
+                        <span class="label">总检测数</span>
+                        <span class="value" id="total-domains">0</span>
                     </div>
-                    <div class="detection-stats">
-                        <div class="stat-card">
-                            <div class="stat-title">攻击检测率</div>
-                            <div class="stat-value" id="detectionRate">0%</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-title">误报率</div>
-                            <div class="stat-value" id="falsePositiveRate">0%</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-title">当前威胁等级</div>
-                            <div class="stat-value" id="threatLevel">低</div>
-                        </div>
+                    <div class="stat-item">
+                        <span class="label">正常域名</span>
+                        <span class="value" id="normal-domains">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">可疑域名</span>
+                        <span class="value" id="suspicious-domains">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="label">恶意域名</span>
+                        <span class="value" id="malicious-domains">0</span>
                     </div>
                 </div>
-            </div>
-
-            <!-- 特征分析 -->
-            <div class="panel feature-analysis">
-                <h2>特征分析</h2>
-                <div class="feature-grid">
-                    <div class="feature-chart">
-                        <div class="chart-container" id="featureChart"></div>
-                    </div>
-                    <div class="feature-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>特征</th>
-                                    <th>值</th>
-                                    <th>状态</th>
-                                </tr>
-                            </thead>
-                            <tbody id="featureTableBody">
-                                <!-- 动态填充 -->
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="domain-list">
+                    <h4>最近检测记录</h4>
+                    <div id="recent-domains"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // 初始化WebSocket连接
+        const socket = io();
+        let trafficChart = null;
+        let attackMap = null;
+        let connectionStatus = false;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        let heartbeatInterval;
+
+        // 数据验证
+        function validateData(data) {
+            const required = ['system', 'traffic', 'detection', 'domain_detection'];
+            return required.every(key => data[key] !== undefined);
+        }
+
+        // 更新连接状态
+        function updateConnectionStatus(connected) {
+            connectionStatus = connected;
+            const statusElement = document.getElementById('connection-status');
+            statusElement.textContent = connected ? '已连接' : '未连接';
+            statusElement.className = `status-indicator ${connected ? 'connected' : 'disconnected'}`;
+            
+            if (connected) {
+                startHeartbeat();
+            } else {
+                stopHeartbeat();
+            }
+        }
+
+        // 心跳机制
+        function startHeartbeat() {
+            heartbeatInterval = setInterval(() => {
+                socket.emit('ping');
+            }, 30000);
+        }
+
+        function stopHeartbeat() {
+            clearInterval(heartbeatInterval);
+        }
+
+        // 重连机制
+        function reconnect() {
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                console.log(`尝试重连 (${reconnectAttempts}/${maxReconnectAttempts})`);
+                socket.connect();
+            } else {
+                console.error('达到最大重连次数');
+                updateConnectionStatus(false);
+            }
+        }
+
+        // 更新客户端数量
+        function updateClientCount(count) {
+            document.getElementById('client-count').textContent = `客户端数: ${count}`;
+        }
+
+        // 初始化流量图表
+        function initTrafficChart() {
+            trafficChart = echarts.init(document.getElementById('traffic-chart'));
+            const option = {
+                title: {
+                    text: '实时流量统计'
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        let result = params[0].axisValue + '<br/>';
+                        params.forEach(param => {
+                            result += `${param.seriesName}: ${param.value[1].toFixed(2)} MB/s<br/>`;
+                        });
+                        return result;
+                    }
+                },
+                xAxis: {
+                    type: 'time',
+                    splitLine: {
+                        show: false
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '流量 (MB/s)',
+                    splitLine: {
+                        show: true
+                    }
+                },
+                series: [{
+                    name: '入站流量',
+                    type: 'line',
+                    data: []
+                }, {
+                    name: '出站流量',
+                    type: 'line',
+                    data: []
+                }]
+            };
+            trafficChart.setOption(option);
+        }
+
+        // 初始化攻击地图
+        function initAttackMap() {
+            attackMap = echarts.init(document.getElementById('attack-map'));
+            const option = {
+                title: {
+                    text: '攻击分布图'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        return `${params.name}: ${params.value} 次攻击`;
+                    }
+                },
+                visualMap: {
+                    min: 0,
+                    max: 100,
+                    text: ['高', '低'],
+                    realtime: false,
+                    calculable: true,
+                    inRange: {
+                        color: ['#313695', '#4575b4', '#74add1', '#abd9e9', '#e0f3f8', '#ffffbf', '#fee090', '#fdae61', '#f46d43', '#d73027']
+                    }
+                },
+                series: [{
+                    name: '攻击强度',
+                    type: 'map',
+                    map: 'world',
+                    roam: true,
+                    emphasis: {
+                        label: {
+                            show: true
+                        }
+                    },
+                    data: []
+                }]
+            };
+            attackMap.setOption(option);
+        }
+
+        // 更新系统状态
+        function updateSystemStatus(data) {
+            if (!data) return;
+            
+            document.getElementById('cpu-usage').textContent = `${data.cpu_usage}%`;
+            document.getElementById('memory-usage').textContent = `${data.memory_usage}%`;
+            document.getElementById('network-traffic').textContent = `${data.network_traffic.toFixed(2)} MB/s`;
+            document.getElementById('connection-count').textContent = data.connection_count;
+        }
+
+        // 更新流量统计
+        function updateTrafficStats(data) {
+            if (!data) return;
+            
+            const now = new Date();
+            trafficChart.appendData({
+                seriesIndex: 0,
+                data: [[now, data.inbound_traffic]]
+            });
+            trafficChart.appendData({
+                seriesIndex: 1,
+                data: [[now, data.outbound_traffic]]
+            });
+        }
+
+        // 更新攻击检测
+        function updateAttackDetection(data) {
+            if (!data) return;
+            
+            attackMap.setOption({
+                series: [{
+                    data: data.attacks
+                }]
+            });
+            document.getElementById('attack-count').textContent = data.stats.total_attacks;
+            document.getElementById('active-attacks').textContent = data.stats.active_attacks;
+        }
+
+        // 更新域名检测
+        function updateDomainDetection(data) {
+            if (!data) return;
+            
+            document.getElementById('total-domains').textContent = data.total;
+            document.getElementById('normal-domains').textContent = data.normal;
+            document.getElementById('suspicious-domains').textContent = data.suspicious;
+            document.getElementById('malicious-domains').textContent = data.malicious;
+
+            const recentDomains = document.getElementById('recent-domains');
+            recentDomains.innerHTML = data.domains.map(domain => `
+                <div class="domain-item ${domain.status}">
+                    <span class="domain-name">${domain.domain}</span>
+                    <span class="domain-status">${domain.status}</span>
+                    <span class="domain-time">${new Date(domain.timestamp).toLocaleString()}</span>
+                </div>
+            `).join('');
+        }
+
+        // WebSocket事件处理
+        socket.on('connect', () => {
+            updateConnectionStatus(true);
+            reconnectAttempts = 0;
+            console.log('Connected to server');
+        });
+
+        socket.on('disconnect', () => {
+            updateConnectionStatus(false);
+            console.log('Disconnected from server');
+            setTimeout(reconnect, 5000);
+        });
+
+        socket.on('pong', () => {
+            console.log('Received pong');
+        });
+
+        socket.on('dashboard_update', (data) => {
+            try {
+                if (!validateData(data)) {
+                    console.error('数据格式错误');
+                    return;
+                }
+                
+                updateSystemStatus(data.system);
+                updateTrafficStats(data.traffic);
+                updateAttackDetection(data.detection);
+                updateDomainDetection(data.domain_detection);
+            } catch (error) {
+                console.error('更新数据失败:', error);
+            }
+        });
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initTrafficChart();
+            initAttackMap();
+        });
+
+        // 窗口大小改变时重绘图表
+        window.addEventListener('resize', () => {
+            trafficChart?.resize();
+            attackMap?.resize();
+        });
+    </script>
 </body>
 </html> 

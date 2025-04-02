@@ -5,93 +5,221 @@
 ## 功能特点
 
 - 实时流量监控
+  - 网络流量捕获和分析
+  - 流量统计和可视化
+  - 实时告警通知
 - DDoS攻击检测
+  - 基于CNN-LSTM的深度学习模型
+  - 基于SKM-HFS的检测模型
+  - 实时攻击检测和分类
 - 恶意域名检测
+  - 黑名单管理
+  - 规则检测
+  - 特征分析
 - 系统资源监控
+  - CPU使用率
+  - 内存使用
+  - 磁盘空间
+  - 网络带宽
 - 攻击地图可视化
+  - 全球攻击分布
+  - 攻击类型统计
+  - 实时更新
 - 实时告警通知
+  - 攻击告警
+  - 系统告警
+  - 域名告警
 
 ## 系统要求
 
+### 硬件要求
+- CPU: 至少双核处理器，推荐4核及以上
+- 内存: 最少4GB RAM，推荐8GB及以上
+- 硬盘空间: 最少20GB可用空间
+- 网卡: 支持混杂模式的网卡
+
+### 软件要求
+- 操作系统: Ubuntu 20.04 LTS（推荐）
 - Python 3.8+
 - MongoDB 4.4+
 - Redis 6.0+
-- Ubuntu 20.04 LTS
-- 网卡支持混杂模式
 
 ## 安装步骤
 
-1. 克隆项目
-```bash
-git clone https://github.com/yourusername/ddos_detector.git
-cd ddos_detector
-```
+### 1. 系统环境准备
 
-2. 安装系统依赖
+#### 1.1 更新系统
 ```bash
+# 更新系统包
 sudo apt update
-sudo apt install -y python3-pip python3-dev build-essential libpcap-dev
+sudo apt upgrade -y
+
+# 安装基础工具
+sudo apt install -y build-essential git curl wget
 ```
 
-3. 安装数据库
+#### 1.2 安装Python环境
 ```bash
-sudo apt install -y mongodb redis-server
+# 安装Python和pip
+sudo apt install -y python3 python3-pip python3-dev
+
+# 安装虚拟环境工具
+sudo apt install -y python3-venv
+
+# 创建虚拟环境
+python3 -m venv /opt/ddos_detector/venv
+
+# 激活虚拟环境
+source /opt/ddos_detector/venv/bin/activate
 ```
 
-4. 创建虚拟环境
+### 2. 安装数据库
+
+#### 2.1 安装MongoDB
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+# 导入MongoDB公钥
+wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -
+
+# 添加MongoDB源
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/4.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list
+
+# 更新包列表
+sudo apt update
+
+# 安装MongoDB
+sudo apt install -y mongodb-org
+
+# 启动MongoDB
+sudo systemctl start mongod
+sudo systemctl enable mongod
+
+# 检查MongoDB状态
+sudo systemctl status mongod
 ```
 
-5. 安装Python依赖
+#### 2.2 安装Redis
 ```bash
+# 安装Redis
+sudo apt install -y redis-server
+
+# 启动Redis
+sudo systemctl start redis-server
+sudo systemctl enable redis-server
+
+# 检查Redis状态
+sudo systemctl status redis-server
+```
+
+### 3. 安装系统依赖
+
+#### 3.1 安装网络工具
+```bash
+# 安装网络相关工具
+sudo apt install -y libpcap-dev tcpdump net-tools
+```
+
+#### 3.2 安装编译工具
+```bash
+# 安装编译工具
+sudo apt install -y build-essential gcc g++ make
+```
+
+### 4. 部署项目
+
+#### 4.1 创建项目目录
+```bash
+# 创建项目目录
+sudo mkdir -p /opt/ddos_detector
+sudo chown -R $USER:$USER /opt/ddos_detector
+
+# 创建必要的子目录
+sudo mkdir -p /var/log/ddos_detector
+sudo mkdir -p /var/lib/ddos_detector
+sudo mkdir -p /opt/ddos_detector/models
+sudo mkdir -p /opt/ddos_detector/data
+```
+
+#### 4.2 克隆项目代码
+```bash
+# 进入项目目录
+cd /opt/ddos_detector
+
+# 克隆项目代码
+git clone https://github.com/moxi-6666/ddos_detector.git .
+```
+
+#### 4.3 安装Python依赖
+```bash
+# 确保在虚拟环境中
+source /opt/ddos_detector/venv/bin/activate
+
+# 安装依赖包
 pip install -r requirements.txt
 ```
 
-6. 配置网卡混杂模式
+### 5. 配置项目
+
+#### 5.1 配置数据库连接
 ```bash
-sudo ifconfig ens33 promisc
-```
+# 编辑配置文件
+nano /opt/ddos_detector/app/config/config.py
 
-## 配置说明
-
-1. 数据库配置
-```python
-# config/config.py
+# 修改数据库配置
 MONGODB_URI = 'mongodb://localhost:27017/'
 MONGODB_DB = 'ddos_detector'
-REDIS_URI = 'redis://localhost:6379/0'
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_DB = 0
 ```
 
-2. 网络配置
-```python
-CAPTURE_INTERFACE = 'ens33'  # 网卡名称
-CAPTURE_FILTER = 'ip'       # 抓包过滤器
-```
-
-3. 检测配置
-```python
-ALERT_THRESHOLD = 0.7       # 告警阈值
-DETECTION_INTERVAL = 60     # 检测间隔（秒）
-```
-
-## 使用方法
-
-1. 启动服务
+#### 5.2 配置系统权限
 ```bash
-sudo python app.py
+# 设置目录权限
+sudo chown -R $USER:$USER /var/log/ddos_detector
+sudo chown -R $USER:$USER /var/lib/ddos_detector
+sudo chown -R $USER:$USER /opt/ddos_detector
+
+# 设置执行权限
+sudo chmod +x /opt/ddos_detector/app/app.py
 ```
 
-2. 访问Web界面
-```
-http://localhost:5000
-```
+### 6. 启动服务
 
-3. 查看日志
+#### 6.1 启动数据库服务
 ```bash
-tail -f /var/log/ddos_detector/app.log
+# 启动MongoDB
+sudo systemctl start mongod
+
+# 启动Redis
+sudo systemctl start redis-server
 ```
+
+#### 6.2 启动应用
+```bash
+# 进入项目目录
+cd /opt/ddos_detector
+
+# 激活虚拟环境
+source venv/bin/activate
+
+# 启动应用
+sudo python3 app/app.py
+```
+
+### 7. 验证部署
+
+#### 7.1 检查服务状态
+```bash
+# 检查MongoDB
+sudo systemctl status mongod
+
+# 检查Redis
+sudo systemctl status redis-server
+```
+
+#### 7.2 访问Web界面
+- 打开浏览器访问：`http://服务器IP:5000`
+- 检查日志：`tail -f /var/log/ddos_detector/app.log`
 
 ## API文档
 
@@ -116,54 +244,80 @@ Content-Type: application/json
 }
 ```
 
-## 常见问题
+## 维护指南
 
-1. 网卡不支持混杂模式
-- 检查网卡驱动
-- 更新网卡固件
-- 使用其他网卡
-
-2. 数据库连接失败
-- 检查MongoDB服务状态
-- 验证数据库连接字符串
-- 检查防火墙设置
-
-3. 内存使用过高
-- 调整数据包缓冲区大小
-- 优化检测间隔
-- 清理历史数据
-
-## 维护说明
-
-1. 数据备份
+### 数据库备份
 ```bash
 # MongoDB备份
-mongodump --uri="mongodb://localhost:27017/ddos_detector" --out=backup/
+mongodump --db ddos_detector --out /backup/mongodb
 
 # Redis备份
-redis-cli SAVE
-cp /var/lib/redis/dump.rdb backup/
+redis-cli save
 ```
 
-2. 日志清理
+### 日志管理
 ```bash
-# 清理30天前的日志
-find /var/log/ddos_detector -type f -mtime +30 -delete
+# 查看应用日志
+tail -f /var/log/ddos_detector/app.log
+
+# 查看模型日志
+tail -f /var/log/ddos_detector/model.log
+
+# 查看捕获日志
+tail -f /var/log/ddos_detector/capture.log
 ```
 
-3. 性能优化
-- 定期清理历史数据
-- 优化数据库索引
-- 调整缓存策略
+### 系统监控
+```bash
+# 监控系统资源
+top
+htop
 
-## 贡献指南
+# 监控网络流量
+iftop
+nethogs
+```
 
-1. Fork项目
-2. 创建特性分支
-3. 提交更改
-4. 推送到分支
-5. 创建Pull Request
+## 常见问题
+
+### 权限问题
+```bash
+# 修复权限
+sudo chown -R $USER:$USER /opt/ddos_detector
+sudo chown -R $USER:$USER /var/log/ddos_detector
+sudo chown -R $USER:$USER /var/lib/ddos_detector
+```
+
+### 数据库连接问题
+```bash
+# 检查MongoDB连接
+mongo --eval "db.version()"
+
+# 检查Redis连接
+redis-cli ping
+```
+
+### 依赖问题
+```bash
+# 重新安装依赖
+pip install -r requirements.txt --force-reinstall
+```
+
+## 安全建议
+
+1. 定期更新系统和依赖包
+2. 配置防火墙规则
+3. 使用强密码
+4. 定期备份数据
+5. 监控系统资源使用情况
+
+## 联系方式
+
+如有问题，请联系系统管理员：
+- 邮箱：2790739170@qq.com
+- 电话：15724405133
+- 工作时间：周一至周五 9:00-18:00
 
 ## 许可证
 
-MIT License 
+本项目采用MIT许可证，详见LICENSE文件。 

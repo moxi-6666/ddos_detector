@@ -1,7 +1,7 @@
 import os
 import logging
 from logging.handlers import RotatingFileHandler
-from config.config import config
+from app.config.config import config
 
 class Logger:
     """日志管理类"""
@@ -24,7 +24,8 @@ class Logger:
         file_handler = RotatingFileHandler(
             log_file,
             maxBytes=self.config.LOG_MAX_BYTES,
-            backupCount=self.config.LOG_BACKUP_COUNT
+            backupCount=self.config.LOG_BACKUP_COUNT,
+            encoding='utf-8'
         )
         
         # 创建控制台处理器
@@ -38,14 +39,21 @@ class Logger:
         # 添加处理器
         self.logger.addHandler(file_handler)
         self.logger.addHandler(console_handler)
+        
+        # 防止日志重复
+        self.logger.propagate = False
     
     def get_logger(self):
         """获取日志记录器"""
         return self.logger
 
+def get_logger(name, config_name='default'):
+    """获取日志记录器的工厂函数"""
+    return Logger(name, config_name).get_logger()
+
 # 创建应用日志记录器
-app_logger = Logger('ddos_detector').get_logger()
+app_logger = get_logger('ddos_detector')
 # 创建检测模型日志记录器
-model_logger = Logger('detector_model').get_logger()
+model_logger = get_logger('detector_model')
 # 创建流量捕获日志记录器
-capture_logger = Logger('traffic_capture').get_logger() 
+capture_logger = get_logger('traffic_capture') 
