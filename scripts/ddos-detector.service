@@ -1,0 +1,15 @@
+[Unit]
+Description=DDoS Detection Service
+After=network.target mongodb.service redis-server.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/ddos_detector
+Environment=PYTHONPATH=/home/ubuntu/ddos_detector
+ExecStart=/home/ubuntu/ddos_detector/venv/bin/python scripts/start_detector.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target 
