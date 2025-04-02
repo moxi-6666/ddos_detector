@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.3'
 
 services:
   app:
@@ -6,151 +6,75 @@ services:
     ports:
       - "5000:5000"
     volumes:
+      - ./app:/app
       - ./logs:/app/logs
       - ./data:/app/data
-      - ./prometheus_data:/app/prometheus_data
     environment:
       - APP_ENV=production
       - MONGODB_URI=mongodb://mongodb:27017/
-      - REDIS_HOST=redis
+      - REDIS_URI=redis://redis:6379/0
       - TZ=Asia/Shanghai
     depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      - mongodb
+      - redis
     networks:
       - ddos-network
-    restart: unless-stopped
-    privileged: true  # 允许容器访问主机网络接口
 
   mongodb:
     image: mongo:4.4
+    ports:
+      - "27017:27017"
     volumes:
       - mongodb_data:/data/db
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USER}
+      - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
       - TZ=Asia/Shanghai
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 40s
     networks:
       - ddos-network
-    restart: unless-stopped
 
   redis:
     image: redis:6.0
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
     command: redis-server --requirepass ${REDIS_PASSWORD}
     environment:
       - TZ=Asia/Shanghai
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.2'
-          memory: 256M
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 40s
     networks:
       - ddos-network
-    restart: unless-stopped
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.30.3
+    ports:
+      - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
     environment:
       - TZ=Asia/Shanghai
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.2'
-          memory: 256M
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     networks:
       - ddos-network
-    restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:latest
-    volumes:
-      - grafana_data:/var/lib/grafana
+    image: grafana/grafana:8.1.2
     ports:
       - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - TZ=Asia/Shanghai
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.2'
-          memory: 256M
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     depends_on:
-      prometheus:
-        condition: service_healthy
+      - prometheus
     networks:
       - ddos-network
-    restart: unless-stopped
-
-volumes:
-  mongodb_data:
-  redis_data:
-  prometheus_data:
-  grafana_data:
 
 networks:
   ddos-network:
@@ -158,4 +82,10 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.20.0.0/16 
+        - subnet: 172.20.0.0/16
+
+volumes:
+  mongodb_data:
+  redis_data:
+  prometheus_data:
+  grafana_data: 
